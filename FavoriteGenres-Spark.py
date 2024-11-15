@@ -6,7 +6,7 @@ from pyspark.sql.window import Window
 # Load up movie ID -> movie name and genre dictionary
 def loadMovieGenres():
     movieGenres = {}
-    with open("u.item", encoding="latin1") as f:
+    with open("u.item") as f:
         for line in f:
             fields = line.split('|')
             movieID = int(fields[0])
