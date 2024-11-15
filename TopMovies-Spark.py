@@ -1,5 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import avg, count, desc
+from pyspark.sql import Row
+
 
 # Load up movie ID -> movie name dictionary
 def loadMovieNames():
