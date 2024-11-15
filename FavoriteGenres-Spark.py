@@ -1,12 +1,12 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import explode, col, count, desc
-from pyspark.sql import Row
-
+from pyspark.sql.functions import explode, col, count, desc, row_number
+from pyspark.sql.types import ArrayType, StringType, Row
+from pyspark.sql.window import Window
 
 # Load up movie ID -> movie name and genre dictionary
 def loadMovieGenres():
     movieGenres = {}
-    with open("u.item", encoding="latin1") as f:
+    with open("ml-100k/u.item", encoding="latin1") as f:
         for line in f:
             fields = line.split('|')
             movieID = int(fields[0])
@@ -47,9 +47,6 @@ if __name__ == "__main__":
         return movieGenresBroadcast.value.get(movieID, [])
 
     # Register a UDF to map movieID to genres
-    from pyspark.sql.functions import udf
-    from pyspark.sql.types import ArrayType, StringType
-
     addGenresUDF = udf(addGenres, ArrayType(StringType()))
 
     ratingsWithGenres = ratings.withColumn("genres", addGenresUDF(col("movieID")))
@@ -60,14 +57,17 @@ if __name__ == "__main__":
     # Calculate the genre preferences for each user
     userGenrePreferences = explodedGenres.groupBy("userID", "genre").agg(count("*").alias("genreCount"))
 
-    # Find the favorite genre for each user
-    favoriteGenres = userGenrePreferences.groupBy("userID").agg(
-        col("genre").alias("favoriteGenre"),
-        col("genreCount").alias("count")
-    ).orderBy(desc("count"))
+    # Use a Window to find the favorite genre for each user
+    windowSpec = Window.partitionBy("userID").orderBy(desc("genreCount"))
+
+    # Add a row number for each user and genre based on the count
+    rankedGenres = userGenrePreferences.withColumn("rank", row_number().over(windowSpec))
+
+    # Filter to get only the top-ranked genre for each user
+    favoriteGenres = rankedGenres.filter(col("rank") == 1).select("userID", "genre", "genreCount")
 
     # Collect and display results
     print("\nUser Genre Preferences:")
-    favoriteGenres.show()
+    favoriteGenres.show(truncate=False)
 
     spark.stop()
