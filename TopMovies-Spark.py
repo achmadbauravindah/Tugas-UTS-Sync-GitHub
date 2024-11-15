@@ -46,6 +46,7 @@ if __name__ == "__main__":
     # Collect and print the results
     print("\nTop 10 movies based on average rating (with at least 50 ratings):")
     for row in top10Movies.collect():
-        print(f"{movieNames[row['movieID']]}: {row['avgRating']:.2f} ({row['ratingCount']} ratings)")
+        print("{0}: {1:.2f} ({2} ratings)".format(
+            movieNames[row['movieID']], row['avgRating'], row['ratingCount']))
 
     spark.stop()
