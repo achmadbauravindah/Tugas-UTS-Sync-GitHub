@@ -52,3 +52,6 @@ if __name__ == "__main__":
             movieNames[row['movieID']], row['avgRating'], row['ratingCount']))
 
     spark.stop()
+
+
+# ok
